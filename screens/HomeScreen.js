@@ -31,6 +31,7 @@ const HomeScreen = () => {
   const [customerAddress, setCustomerAddress] = useState("");
   const [driverLocation, setDriverLocation] = useState();
   const [customer, setCustomer] = useState();
+  const [statusButton, setStatusButton] = useState();
   const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
 
   const pusher = new Pusher(CHANNELS_APP_KEY, {
@@ -38,6 +39,8 @@ const HomeScreen = () => {
     cluster: CHANNELS_APP_CLUSTER,
     encrypted: true,
   });
+
+  let user_rider_channel;
 
   useEffect(() => {
     const available_drivers_channel = pusher.subscribe(
@@ -90,9 +93,40 @@ const HomeScreen = () => {
     })();
   }, []);
 
-  const acceptOrder = () => {};
+  const acceptOrder = () => {
+    setIsOrderModalVisible(false);
+    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+    user_rider_channel.bind("pusher:subscription_succeeded", () => {
+      console.log(
+        "[driver app] accept order user-rider-channel subscription success"
+      );
+      user_rider_channel.trigger("client-driver-response", { response: "yes" });
+      user_rider_channel.bind("client-driver-response", (customer_response) => {
+        if (customer_response.response === "yes") {
+          setHasOrder(true);
+          user_rider_channel.trigger("client-found-driver", {
+            location: driverLocation,
+          });
+          user_rider_channel.trigger("client-order-update", { orderStep: 1 });
 
-  const declineOrder = () => {};
+          setStatusButton("Picked Up Order");
+        }
+      });
+    });
+  };
+
+  const declineOrder = () => {
+    setIsOrderModalVisible(false);
+  };
+
+  const pickedOrder = () => {
+    setStatusButton("Delivered Order");
+    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+    user_rider_channel.bind("pusher:subscription_succeeded", () => {
+      user_rider_channel.trigger("client-order-update", { orderStep: 2 });
+      user_rider_channel.trigger("client-order-picked-up", {});
+    });
+  };
 
   return (
     <View>
@@ -111,6 +145,11 @@ const HomeScreen = () => {
             />
           )}
         </MapView>
+      )}
+      {statusButton && (
+        <TouchableOpacity style={styles.statusButton} onPress={pickedOrder}>
+          <Text style={styles.buttonText}>{statusButton}</Text>
+        </TouchableOpacity>
       )}
       <Modal
         animationType="fade"
