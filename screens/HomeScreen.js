@@ -75,6 +75,7 @@ const HomeScreen = () => {
   }, []);
 
   useEffect(() => {
+    let watch_position;
     (async () => {
       let { status } = await Location.getForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -92,8 +93,25 @@ const HomeScreen = () => {
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       });
+
+      watch_position = await Location.watchPositionAsync({}, (position) => {
+        setDriverLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      });
     })();
+    return watch_position;
   }, []);
+
+  useEffect(() => {
+    if (hasOrder) {
+      user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+      user_rider_channel.trigger("client-driver-location", {
+        location: driverLocation,
+      });
+    }
+  }, [driverLocation]);
 
   const acceptOrder = () => {
     setIsOrderModalVisible(false);
