@@ -128,6 +128,23 @@ const HomeScreen = () => {
     });
   };
 
+  const deliveredOrder = () => {
+    setStatusButton(null);
+    setHasOrder(false);
+    setCustomer(null);
+    setCustomerAddress("");
+    setCustomerLocation(null);
+    setRestaurantAddress("");
+    setRestaurantLocation(null);
+    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+    user_rider_channel.bind("pusher:subscription_succeeded", () => {
+      user_rider_channel.trigger("client-order-update", { orderStep: 3 });
+      user_rider_channel.trigger("client-order-delivered", {});
+      user_rider_channel.unbind("client-driver-response");
+      pusher.unsubscribe("private-user-rider-freddy");
+    });
+  };
+
   return (
     <View>
       <Button title="Open" onPress={() => setIsOrderModalVisible(true)} />
@@ -147,7 +164,12 @@ const HomeScreen = () => {
         </MapView>
       )}
       {statusButton && (
-        <TouchableOpacity style={styles.statusButton} onPress={pickedOrder}>
+        <TouchableOpacity
+          style={styles.statusButton}
+          onPress={
+            statusButton === "Picked Up Order" ? pickedOrder : deliveredOrder
+          }
+        >
           <Text style={styles.buttonText}>{statusButton}</Text>
         </TouchableOpacity>
       )}
@@ -255,5 +277,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 20,
     textTransform: "uppercase",
+  },
+  statusButton: {
+    backgroundColor: "#fcbf49",
+    position: "absolute",
+    bottom: 30,
+    alignItems: "center",
+    width: "80%",
+    alignSelf: "center",
+    paddingVertical: 15,
+    borderRadius: 10,
   },
 });
