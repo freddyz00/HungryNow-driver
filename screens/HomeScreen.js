@@ -1,16 +1,15 @@
 import {
   View,
   Text,
-  Alert,
   StyleSheet,
-  Modal,
+  Alert,
   TouchableOpacity,
-  Button,
+  Modal,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 
 import * as Location from "expo-location";
-import MapView, { PROVIDER_GOOGLE, Marker } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { calculateMapCoords } from "../helpers";
 
@@ -137,6 +136,13 @@ const HomeScreen = () => {
 
   const declineOrder = () => {
     setIsOrderModalVisible(false);
+    setStatusButton(null);
+    setHasOrder(false);
+    setCustomer(null);
+    setCustomerAddress("");
+    setCustomerLocation(null);
+    setRestaurantAddress("");
+    setRestaurantLocation(null);
   };
 
   const pickedOrder = () => {
@@ -167,7 +173,6 @@ const HomeScreen = () => {
 
   return (
     <View>
-      <Button title="Open" onPress={() => setIsOrderModalVisible(true)} />
       {driverLocation && (
         <MapView
           style={styles.mapView}
@@ -231,6 +236,7 @@ const HomeScreen = () => {
           )}
         </MapView>
       )}
+
       {statusButton && (
         <TouchableOpacity
           style={styles.statusButton}
@@ -251,10 +257,7 @@ const HomeScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
-            <TouchableOpacity
-              onPress={() => setIsOrderModalVisible(false)}
-              style={styles.close}
-            >
+            <TouchableOpacity onPress={declineOrder} style={styles.close}>
               <Feather name="x" size={28} color="#fcbf49" />
             </TouchableOpacity>
             <View style={styles.orderDetails}>
