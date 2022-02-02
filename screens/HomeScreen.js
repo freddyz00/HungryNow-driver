@@ -1,6 +1,7 @@
 import {
   View,
   Text,
+  Alert,
   StyleSheet,
   Modal,
   TouchableOpacity,
@@ -10,6 +11,7 @@ import React, { useEffect, useState } from "react";
 
 import * as Location from "expo-location";
 import MapView, { PROVIDER_GOOGLE, Marker } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
 import { calculateMapCoords } from "../helpers";
 
 import { Feather } from "@expo/vector-icons";
@@ -152,13 +154,61 @@ const HomeScreen = () => {
         <MapView
           style={styles.mapView}
           provider={PROVIDER_GOOGLE}
-          region={calculateMapCoords(driverLocation)}
+          region={
+            customerLocation
+              ? calculateMapCoords(driverLocation, customerLocation)
+              : calculateMapCoords(driverLocation)
+          }
         >
+          {restaurantLocation && (
+            <Marker
+              title="Restaurant"
+              coordinate={restaurantLocation}
+              pinColor="blue"
+            />
+          )}
+          {customerLocation && (
+            <Marker
+              title="Customer"
+              coordinate={customerLocation}
+              pinColor="red"
+            />
+          )}
           {driverLocation && (
             <Marker
               title="Your Location"
               coordinate={driverLocation}
               pinColor="#fcbf49"
+            />
+          )}
+
+          {statusButton === "Picked Up Order" && (
+            <MapViewDirections
+              origin={driverLocation}
+              destination={restaurantLocation}
+              apikey={GOOGLE_MAPS_API_KEY}
+              strokeWidth={4}
+              strokeColor="#fcbf49"
+            />
+          )}
+
+          {statusButton === "Picked Up Order" && (
+            <MapViewDirections
+              origin={restaurantLocation}
+              destination={customerLocation}
+              apikey={GOOGLE_MAPS_API_KEY}
+              strokeWidth={4}
+              strokeColor="#fcbf49"
+            />
+          )}
+
+          {statusButton === "Delivered Order" && (
+            <MapViewDirections
+              origin={driverLocation}
+              destination={customerLocation}
+              apikey={GOOGLE_MAPS_API_KEY}
+              strokeWidth={4}
+              strokeColor="#fcbf49"
             />
           )}
         </MapView>
