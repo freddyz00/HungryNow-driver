@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import HomeScreen from "./screens/HomeScreen";
+import DeliveringScreen from "./screens/DeliveringScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -13,20 +14,11 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerTintColor: "white",
-          headerStyle: {
-            backgroundColor: "#fcbf49",
-          },
-          headerBackTitleVisible: false,
+          headerShown: false,
         }}
       >
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{
-            title: "Hungry Now",
-          }}
-        />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Delivering" component={DeliveringScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
