@@ -55,11 +55,7 @@ const DeliveringScreen = ({ navigation }) => {
     });
 
     available_drivers_channel.bind("pusher:subscription_succeeded", () => {
-      console.log(
-        "[driver app] available drivers channel subscription success"
-      );
       available_drivers_channel.bind("client-request-driver", (data) => {
-        console.log("[driver app] client request driver");
         if (!hasOrder) {
           setIsOrderModalVisible(true);
           setCustomer(data.customer);
@@ -73,6 +69,7 @@ const DeliveringScreen = ({ navigation }) => {
         }
       });
     });
+    return () => pusher.disconnect();
   }, []);
 
   useEffect(() => {
@@ -118,9 +115,6 @@ const DeliveringScreen = ({ navigation }) => {
     setIsOrderModalVisible(false);
     user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
     user_rider_channel.bind("pusher:subscription_succeeded", () => {
-      console.log(
-        "[driver app] accept order user-rider-channel subscription success"
-      );
       user_rider_channel.trigger("client-driver-response", { response: "yes" });
       user_rider_channel.bind("client-driver-response", (customer_response) => {
         if (customer_response.response === "yes") {
@@ -178,7 +172,7 @@ const DeliveringScreen = ({ navigation }) => {
       <StatusBar style="auto" />
       <View style={styles.backIcon}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Entypo name="chevron-left" size={40} color="#fcbf49" />
+          <Entypo name="chevron-left" size={30} color="#fcbf49" />
         </TouchableOpacity>
       </View>
       {driverLocation && (
@@ -312,7 +306,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     backgroundColor: "white",
-    borderRadius: 20,
+    borderRadius: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 25,
     justifyContent: "center",
     left: 20,
     top: 50,
