@@ -18,6 +18,7 @@ import { Feather } from "@expo/vector-icons";
 import { Entypo } from "@expo/vector-icons";
 
 import Pusher from "pusher-js/react-native";
+import { useOrderTracker } from "../context/OrderTrackerContext";
 
 import {
   CHANNELS_APP_KEY,
@@ -37,40 +38,48 @@ const DeliveringScreen = ({ navigation }) => {
   const [statusButton, setStatusButton] = useState();
   const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
 
-  const pusher = new Pusher(CHANNELS_APP_KEY, {
-    authEndpoint: `${NGROK_URL}/pusher/auth`,
-    cluster: CHANNELS_APP_CLUSTER,
-    encrypted: true,
-  });
+  const { pusher, setPusher, setMessagesWithCustomer } = useOrderTracker();
 
   let user_rider_channel;
 
   useEffect(() => {
-    const available_drivers_channel = pusher.subscribe(
-      "private-available-drivers"
+    setPusher(
+      new Pusher(CHANNELS_APP_KEY, {
+        authEndpoint: `${NGROK_URL}/pusher/auth`,
+        cluster: CHANNELS_APP_CLUSTER,
+        encrypted: true,
+      })
     );
-
-    available_drivers_channel.bind("pusher:subscription_error", (error) => {
-      console.log(error);
-    });
-
-    available_drivers_channel.bind("pusher:subscription_succeeded", () => {
-      available_drivers_channel.bind("client-request-driver", (data) => {
-        if (!hasOrder) {
-          setIsOrderModalVisible(true);
-          setCustomer(data.customer);
-          setRestaurantLocation({
-            latitude: data.restaurantLocation[0],
-            longitude: data.restaurantLocation[1],
-          });
-          setCustomerLocation(data.customerLocation);
-          setRestaurantAddress(data.restaurantAddress);
-          setCustomerAddress(data.customerAddress);
-        }
-      });
-    });
-    return () => pusher.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (pusher) {
+      const available_drivers_channel = pusher.subscribe(
+        "private-available-drivers"
+      );
+
+      available_drivers_channel.bind("pusher:subscription_error", (error) => {
+        console.log(error);
+      });
+
+      available_drivers_channel.bind("pusher:subscription_succeeded", () => {
+        available_drivers_channel.bind("client-request-driver", (data) => {
+          if (!hasOrder) {
+            setIsOrderModalVisible(true);
+            setCustomer(data.customer);
+            setRestaurantLocation({
+              latitude: data.restaurantLocation[0],
+              longitude: data.restaurantLocation[1],
+            });
+            setCustomerLocation(data.customerLocation);
+            setRestaurantAddress(data.restaurantAddress);
+            setCustomerAddress(data.customerAddress);
+          }
+        });
+      });
+      return () => pusher.disconnect();
+    }
+  }, [pusher]);
 
   useEffect(() => {
     let watch_position;
@@ -103,17 +112,21 @@ const DeliveringScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    if (hasOrder) {
-      user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+    if (hasOrder && customer) {
+      user_rider_channel = pusher.subscribe(
+        `private-user-rider-${customer.username}`
+      );
       user_rider_channel.trigger("client-driver-location", {
         location: driverLocation,
       });
     }
-  }, [driverLocation]);
+  }, [driverLocation, customer]);
 
   const acceptOrder = () => {
     setIsOrderModalVisible(false);
-    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
+    user_rider_channel = pusher.subscribe(
+      `private-user-rider-${customer.username}`
+    );
     user_rider_channel.bind("pusher:subscription_succeeded", () => {
       user_rider_channel.trigger("client-driver-response", { response: "yes" });
       user_rider_channel.bind("client-driver-response", (customer_response) => {
@@ -143,11 +156,11 @@ const DeliveringScreen = ({ navigation }) => {
 
   const pickedOrder = () => {
     setStatusButton("Delivered Order");
-    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
-    user_rider_channel.bind("pusher:subscription_succeeded", () => {
-      user_rider_channel.trigger("client-order-update", { orderStep: 2 });
-      user_rider_channel.trigger("client-order-picked-up", {});
-    });
+    user_rider_channel = pusher.subscribe(
+      `private-user-rider-${customer.username}`
+    );
+    user_rider_channel.trigger("client-order-update", { orderStep: 2 });
+    user_rider_channel.trigger("client-order-picked-up", {});
   };
 
   const deliveredOrder = () => {
@@ -158,13 +171,14 @@ const DeliveringScreen = ({ navigation }) => {
     setCustomerLocation(null);
     setRestaurantAddress("");
     setRestaurantLocation(null);
-    user_rider_channel = pusher.subscribe(`private-user-rider-freddy`);
-    user_rider_channel.bind("pusher:subscription_succeeded", () => {
-      user_rider_channel.trigger("client-order-update", { orderStep: 3 });
-      user_rider_channel.trigger("client-order-delivered", {});
-      user_rider_channel.unbind("client-driver-response");
-      pusher.unsubscribe("private-user-rider-freddy");
-    });
+    setMessagesWithCustomer([]);
+    user_rider_channel = pusher.subscribe(
+      `private-user-rider-${customer.username}`
+    );
+    user_rider_channel.trigger("client-order-update", { orderStep: 3 });
+    user_rider_channel.trigger("client-order-delivered", {});
+    user_rider_channel.unbind("client-driver-response");
+    pusher.unsubscribe(`private-user-rider-${customer.username}`);
   };
 
   return (
@@ -175,6 +189,14 @@ const DeliveringScreen = ({ navigation }) => {
           <Entypo name="chevron-left" size={30} color="#fcbf49" />
         </TouchableOpacity>
       </View>
+      {hasOrder && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Chat", { customer })}
+          style={styles.contactButton}
+        >
+          <Text style={[styles.buttonText, { fontSize: 18 }]}>Contact</Text>
+        </TouchableOpacity>
+      )}
       {driverLocation && (
         <MapView
           style={styles.mapView}
@@ -314,6 +336,18 @@ const styles = StyleSheet.create({
     left: 20,
     top: 50,
     zIndex: 100,
+  },
+  contactButton: {
+    backgroundColor: "#fcbf49",
+    position: "absolute",
+    top: 45,
+    right: 10,
+    alignItems: "center",
+    width: "40%",
+    alignSelf: "center",
+    paddingVertical: 10,
+    borderRadius: 10,
+    zIndex: 1,
   },
   modalContainer: {
     flex: 1,
