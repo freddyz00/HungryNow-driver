@@ -42,6 +42,7 @@ const DeliveringScreen = ({ navigation }) => {
 
   let user_rider_channel;
 
+  // initialize pusher channels
   useEffect(() => {
     setPusher(
       new Pusher(CHANNELS_APP_KEY, {
@@ -52,6 +53,7 @@ const DeliveringScreen = ({ navigation }) => {
     );
   }, []);
 
+  // subscribe to pusher channels and bind to events
   useEffect(() => {
     if (pusher) {
       const available_drivers_channel = pusher.subscribe(
@@ -81,6 +83,7 @@ const DeliveringScreen = ({ navigation }) => {
     }
   }, [pusher]);
 
+  // get driver's location and setup watch position
   useEffect(() => {
     let watch_position;
     (async () => {
@@ -111,6 +114,7 @@ const DeliveringScreen = ({ navigation }) => {
     return watch_position;
   }, []);
 
+  // update customer with driver's location
   useEffect(() => {
     if (hasOrder && customer) {
       user_rider_channel = pusher.subscribe(
@@ -122,6 +126,7 @@ const DeliveringScreen = ({ navigation }) => {
     }
   }, [driverLocation, customer]);
 
+  // accept order
   const acceptOrder = () => {
     setIsOrderModalVisible(false);
     user_rider_channel = pusher.subscribe(
@@ -143,6 +148,7 @@ const DeliveringScreen = ({ navigation }) => {
     });
   };
 
+  // decline order
   const declineOrder = () => {
     setIsOrderModalVisible(false);
     setStatusButton(null);
@@ -154,6 +160,7 @@ const DeliveringScreen = ({ navigation }) => {
     setRestaurantLocation(null);
   };
 
+  // driver has picked up order
   const pickedOrder = () => {
     setStatusButton("Delivered Order");
     user_rider_channel = pusher.subscribe(
@@ -163,6 +170,7 @@ const DeliveringScreen = ({ navigation }) => {
     user_rider_channel.trigger("client-order-picked-up", {});
   };
 
+  // driver has delivered the order
   const deliveredOrder = () => {
     setStatusButton(null);
     setHasOrder(false);
@@ -189,6 +197,7 @@ const DeliveringScreen = ({ navigation }) => {
           <Entypo name="chevron-left" size={30} color="#fcbf49" />
         </TouchableOpacity>
       </View>
+      {/* contact customer */}
       {hasOrder && (
         <TouchableOpacity
           onPress={() => navigation.navigate("Chat", { customer })}
@@ -197,6 +206,7 @@ const DeliveringScreen = ({ navigation }) => {
           <Text style={[styles.buttonText, { fontSize: 18 }]}>Contact</Text>
         </TouchableOpacity>
       )}
+      {/* render map */}
       {driverLocation && (
         <MapView
           style={styles.mapView}
@@ -260,7 +270,7 @@ const DeliveringScreen = ({ navigation }) => {
           )}
         </MapView>
       )}
-
+      {/* button to update the customer on order status */}
       {statusButton && (
         <TouchableOpacity
           style={styles.statusButton}
@@ -271,6 +281,8 @@ const DeliveringScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>{statusButton}</Text>
         </TouchableOpacity>
       )}
+
+      {/* new order modal */}
       <Modal
         animationType="fade"
         transparent={true}
