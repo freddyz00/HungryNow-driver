@@ -8,11 +8,15 @@ import {
 import React from "react";
 
 import { MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Hungry Now</Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <FontAwesome5 name="utensils" size={40} color="#fcbf49" />
+        <Text style={styles.header}>Hungry Now</Text>
+      </View>
 
       <MaterialIcons
         name="delivery-dining"
@@ -47,8 +51,7 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: "bold",
     color: "#fcbf49",
-    position: "absolute",
-    top: 60,
+    marginLeft: 15,
   },
   icon: {
     marginVertical: 25,

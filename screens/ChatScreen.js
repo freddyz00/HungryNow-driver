@@ -19,21 +19,8 @@ const ChatScreen = ({ route }) => {
 
   let user_rider_channel;
 
-  useEffect(() => {
-    user_rider_channel = pusher.subscribe(
-      `private-user-rider-${customer.username}`
-    );
-    user_rider_channel.bind("client-new-message", ({ messages }) => {
-      setMessagesWithCustomer((prevMessages) =>
-        GiftedChat.append(prevMessages, [{ ...messages[0], sent: true }])
-      );
-    });
-  }, []);
-
   const onSend = (messages = []) => {
-    user_rider_channel = pusher.subscribe(
-      `private-user-rider-${customer.username}`
-    );
+    user_rider_channel = pusher.subscribe(`private-user-rider-${customer.uid}`);
     user_rider_channel.trigger("client-new-message", {
       messages,
     });

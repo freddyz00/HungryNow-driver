@@ -20,6 +20,8 @@ import { Entypo } from "@expo/vector-icons";
 import Pusher from "pusher-js/react-native";
 import { useOrderTracker } from "../context/OrderTrackerContext";
 
+import { GiftedChat } from "react-native-gifted-chat";
+
 import {
   CHANNELS_APP_KEY,
   CHANNELS_APP_CLUSTER,
@@ -114,11 +116,24 @@ const DeliveringScreen = ({ navigation }) => {
     return watch_position;
   }, []);
 
+  useEffect(() => {
+    if (customer) {
+      user_rider_channel = pusher.subscribe(
+        `private-user-rider-${customer.uid}`
+      );
+      user_rider_channel.bind("client-new-message", ({ messages }) => {
+        setMessagesWithCustomer((prevMessages) =>
+          GiftedChat.append(prevMessages, [{ ...messages[0], sent: true }])
+        );
+      });
+    }
+  }, [customer]);
+
   // update customer with driver's location
   useEffect(() => {
     if (hasOrder && customer) {
       user_rider_channel = pusher.subscribe(
-        `private-user-rider-${customer.username}`
+        `private-user-rider-${customer.uid}`
       );
       user_rider_channel.trigger("client-driver-location", {
         location: driverLocation,
@@ -129,22 +144,19 @@ const DeliveringScreen = ({ navigation }) => {
   // accept order
   const acceptOrder = () => {
     setIsOrderModalVisible(false);
-    user_rider_channel = pusher.subscribe(
-      `private-user-rider-${customer.username}`
-    );
-    user_rider_channel.bind("pusher:subscription_succeeded", () => {
-      user_rider_channel.trigger("client-driver-response", { response: "yes" });
-      user_rider_channel.bind("client-driver-response", (customer_response) => {
-        if (customer_response.response === "yes") {
-          setHasOrder(true);
-          user_rider_channel.trigger("client-found-driver", {
-            location: driverLocation,
-          });
-          user_rider_channel.trigger("client-order-update", { orderStep: 1 });
+    user_rider_channel = pusher.subscribe(`private-user-rider-${customer.uid}`);
 
-          setStatusButton("Picked Up Order");
-        }
-      });
+    user_rider_channel.trigger("client-driver-response", { response: "yes" });
+    user_rider_channel.bind("client-driver-response", (customer_response) => {
+      if (customer_response.response === "yes") {
+        setHasOrder(true);
+        user_rider_channel.trigger("client-found-driver", {
+          location: driverLocation,
+        });
+        user_rider_channel.trigger("client-order-update", { orderStep: 1 });
+
+        setStatusButton("Picked Up Order");
+      }
     });
   };
 
@@ -163,9 +175,7 @@ const DeliveringScreen = ({ navigation }) => {
   // driver has picked up order
   const pickedOrder = () => {
     setStatusButton("Delivered Order");
-    user_rider_channel = pusher.subscribe(
-      `private-user-rider-${customer.username}`
-    );
+    user_rider_channel = pusher.subscribe(`private-user-rider-${customer.uid}`);
     user_rider_channel.trigger("client-order-update", { orderStep: 2 });
     user_rider_channel.trigger("client-order-picked-up", {});
   };
@@ -180,13 +190,11 @@ const DeliveringScreen = ({ navigation }) => {
     setRestaurantAddress("");
     setRestaurantLocation(null);
     setMessagesWithCustomer([]);
-    user_rider_channel = pusher.subscribe(
-      `private-user-rider-${customer.username}`
-    );
+    user_rider_channel = pusher.subscribe(`private-user-rider-${customer.uid}`);
     user_rider_channel.trigger("client-order-update", { orderStep: 3 });
     user_rider_channel.trigger("client-order-delivered", {});
-    user_rider_channel.unbind("client-driver-response");
-    pusher.unsubscribe(`private-user-rider-${customer.username}`);
+    user_rider_channel.unbind();
+    pusher.unsubscribe(`private-user-rider-${customer.uid}`);
   };
 
   return (
