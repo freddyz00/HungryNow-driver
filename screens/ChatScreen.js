@@ -8,7 +8,7 @@ import {
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 
-import { GiftedChat } from "react-native-gifted-chat";
+import { GiftedChat, Bubble, Time } from "react-native-gifted-chat";
 
 import { useOrderTracker } from "../context/OrderTrackerContext";
 
@@ -32,6 +32,30 @@ const ChatScreen = ({ route }) => {
     );
   };
 
+  const renderBubble = (props) => {
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          left: { backgroundColor: "grey" },
+          right: { backgroundColor: "#fcbf49" },
+        }}
+        textStyle={{ left: { color: "white" }, right: { color: "black" } }}
+        renderTime={renderTime}
+        tickStyle={{ color: "black" }}
+      />
+    );
+  };
+
+  const renderTime = (props) => {
+    return (
+      <Time
+        timeTextStyle={{ left: { color: "white" }, right: { color: "black" } }}
+        {...props}
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -39,6 +63,7 @@ const ChatScreen = ({ route }) => {
         messages={messagesWithCustomer}
         user={{ _id: 2, name: "driver" }}
         onSend={onSend}
+        renderBubble={renderBubble}
       />
     </View>
   );
