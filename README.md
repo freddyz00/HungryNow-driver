@@ -1,6 +1,8 @@
 # HungryNow
 
-<img src="assets/demo.gif" alt="demo" style="width: 207px; margin-bottom: 10px">
+<div style="text-align: center">
+    <img src="assets/demo.gif" alt="demo">
+</div>
 
 ## App Description
 
@@ -21,7 +23,7 @@ Once an order has been placed, an event will be sent to drivers through pusher.j
 
 Download the Expo Go App on your device and scan the QR code below to run the app.
 
-<img src="assets/expo-go.svg" alt="QR Code" style="width: 300px; margin-bottom: 10px">
+<img src="assets/expo-go.svg" width="300" alt="QR Code">
 
 If this method does not work, please follow the following steps.
 
